@@ -1,8 +1,11 @@
 module.exports = function (schema, option) {
-  const { prettier } = option;
+  const { _, prettier } = option;
+  const width = option.responsive.width || 750;
+  const viewportWidth = option.responsive.viewportWidth || 375;
+  const htmlFontsize = viewportWidth ? viewportWidth / 7.5 : null;
 
   // imports
-  const imports = [];
+  const imports = [`import React, { useState, useEffect } from 'react';`];
 
   // inline style
   const style = {};
@@ -47,6 +50,33 @@ module.exports = function (schema, option) {
       .join('-')
       .toLowerCase();
   };
+  // no unit style
+  const noUnitStyles = ['opacity', 'fontWeight'];
+  // box relative style
+  const boxStyleList = [
+    'fontSize',
+    'marginTop',
+    'marginBottom',
+    'paddingTop',
+    'paddingBottom',
+    'height',
+    'top',
+    'bottom',
+    'width',
+    'maxWidth',
+    'left',
+    'right',
+    'paddingRight',
+    'paddingLeft',
+    'marginLeft',
+    'marginRight',
+    'lineHeight',
+    'borderBottomRightRadius',
+    'borderBottomLeftRadius',
+    'borderTopRightRadius',
+    'borderTopLeftRadius',
+    'borderRadius'
+  ];
 
   // className structure support
   const generateLess = (schema) => {
@@ -59,7 +89,9 @@ module.exports = function (schema, option) {
         strLess += `.${className} {`;
 
         for (let key in style[className]) {
-          strLess += `${parseCamelToLine(key)}: ${style[className][key]};\n`;
+          let styleValue = parseStyle(style[className], { toREM: true })
+          strLess += `${styleValue};\n`;
+          console.log('strLess', strLess)
         }
       }
 
@@ -78,39 +110,34 @@ module.exports = function (schema, option) {
   };
 
   // convert to responsive unit, such as vw
-  const parseStyle = (styles) => {
-    for (let style in styles) {
-      for (let key in styles[style]) {
-        switch (key) {
-          case 'fontSize':
-          case 'marginTop':
-          case 'marginBottom':
-          case 'paddingTop':
-          case 'paddingBottom':
-          case 'height':
-          case 'top':
-          case 'bottom':
-          case 'width':
-          case 'maxWidth':
-          case 'left':
-          case 'right':
-          case 'paddingRight':
-          case 'paddingLeft':
-          case 'marginLeft':
-          case 'marginRight':
-          case 'lineHeight':
-          case 'borderBottomRightRadius':
-          case 'borderBottomLeftRadius':
-          case 'borderTopRightRadius':
-          case 'borderTopLeftRadius':
-          case 'borderRadius':
-            styles[style][key] = (parseInt(styles[style][key]) / _w).toFixed(2) + 'vw';
-            break;
+  const parseStyle = (style, option = {}) => {
+    const { toVW, toREM } = option;
+    const styleData = [];
+    for (let key in style) {
+      let value = style[key];
+      if (boxStyleList.indexOf(key) != -1) {
+        if (toVW) {
+          value = (parseInt(value) / _w).toFixed(2);
+          value = value == 0 ? value : value + 'vw';
+        } else if (toREM && htmlFontsize) {
+          const valueNum = typeof value == 'string' ? value.replace(/(px)|(rem)/, '') : value;
+          const fontSize = (valueNum * (viewportWidth / width)).toFixed(2);
+          value = parseFloat((fontSize / htmlFontsize).toFixed(2));
+          value = value ? `${value}rem` : value;
+        } else {
+          value = parseInt(value).toFixed(2);
+          value = value == 0 ? value : value + 'px';
         }
+        styleData.push(`${_.kebabCase(key)}: ${value}`);
+      } else if (noUnitStyles.indexOf(key) != -1) {
+        console.log('noUnitStyles-haskey', key);
+        styleData.push(`${_.kebabCase(key)}: ${parseFloat(value)}`);
+      } else {
+        console.log('nokey', value)
+        styleData.push(`${_.kebabCase(key)}: ${value}`);
       }
     }
-
-    return styles;
+    return styleData.join(';');
   };
 
   // parse function, return params and content
@@ -353,8 +380,6 @@ module.exports = function (schema, option) {
         panelValue: prettier.format(
           `
           'use strict';
-
-          import React, { useState, useEffect } from 'react';
           ${imports.join('\n')}
           import styles from './style.less';
           interface ${myComponentName}Props {};
@@ -364,26 +389,15 @@ module.exports = function (schema, option) {
         `,
           prettierOpt
         ),
-        panelType: 'js',
+        panelType: 'ts',
       },
-      {
-        panelName: `style.js`,
-        panelValue: prettier.format(`export default ${toString(style)}`, prettierOpt),
-        panelType: 'js',
-      },
-
       {
         panelName: `style.less`,
         panelValue: prettier.format(generateLess(schema, style), {
           parser: 'less',
         }),
         panelType: 'less',
-      },
-      {
-        panelName: `style.responsive.js`,
-        panelValue: prettier.format(`export default ${toString(parseStyle(style))}`, prettierOpt),
-        panelType: 'js',
-      },
+      }
     ],
     noTemplate: true,
   };
