@@ -389,10 +389,10 @@ module.exports = function (schema, option) {
         `,
           prettierOpt
         ),
-        panelType: 'js',
+        panelType: 'ts',
       },
       {
-        panelName: `index.less`,
+        panelName: `style.less`,
         panelValue: prettier.format(generateLess(schema, style), {
           parser: 'less',
         }),
