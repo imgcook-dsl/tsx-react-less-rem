@@ -1,11 +1,13 @@
 'use strict';
+
 import React, { useState, useEffect } from 'react';
+
 import styles from './style.less';
-interface Page1617007118839Props {}
+interface Page1617008977965Props {}
 const print = function(value) {
   console.log(value);
 };
-const Page1617007118839: React.FC<Page1617007118839Props> = ({}) => {
+const Page1617008977965: React.FC<Page1617008977965Props> = ({}) => {
   const [state, setState] = useState([]);
   return (
     <div className={styles.box}>
@@ -64,4 +66,4 @@ const Page1617007118839: React.FC<Page1617007118839Props> = ({}) => {
     </div>
   );
 };
-export default Page1617007118839;
+export default Page1617008977965;
