@@ -1,3 +1,8 @@
+const kebabtoCamelCase = function (str) {
+  return str.replace(/-\w/g, function (x) {
+    return x.slice(1).toUpperCase();
+  });
+};
 module.exports = function (schema, option) {
   const { _, prettier } = option;
   const width = option.responsive.width || 750;
@@ -84,7 +89,7 @@ module.exports = function (schema, option) {
 
     function walk(json) {
       if (json.props.className) {
-        let className = json.props.className;
+        let className = kebabtoCamelCase(json.props.className);
 
         strLess += `.${className} {`;
 
@@ -267,7 +272,7 @@ module.exports = function (schema, option) {
   const generateRender = (schema) => {
     const type = schema.componentName.toLowerCase();
     const className = schema.props && schema.props.className;
-    const classString = className ? ` className={styles.${className}}` : '';
+    const classString = className ? ` className={styles.${kebabtoCamelCase(className)}}` : '';
 
     if (className) {
       style[className] = schema.props.style;
